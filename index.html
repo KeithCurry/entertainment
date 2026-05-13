@@ -1026,6 +1026,25 @@
       <button class="stream-btn" data-service="Other" onclick="setServiceFilter('Other')">Other</button>
     </div>
 
+    <div class="streaming-row">
+      <span class="streaming-label">Genre:</span>
+      <button class="stream-btn s-active" data-genre="all" onclick="setGenreFilter('all')">All</button>
+      <button class="stream-btn" data-genre="Action" onclick="setGenreFilter('Action')">Action</button>
+      <button class="stream-btn" data-genre="Adventure" onclick="setGenreFilter('Adventure')">Adventure</button>
+      <button class="stream-btn" data-genre="Animation" onclick="setGenreFilter('Animation')">Animation</button>
+      <button class="stream-btn" data-genre="Comedy" onclick="setGenreFilter('Comedy')">Comedy</button>
+      <button class="stream-btn" data-genre="Crime" onclick="setGenreFilter('Crime')">Crime</button>
+      <button class="stream-btn" data-genre="Documentary" onclick="setGenreFilter('Documentary')">Documentary</button>
+      <button class="stream-btn" data-genre="Drama" onclick="setGenreFilter('Drama')">Drama</button>
+      <button class="stream-btn" data-genre="Fantasy" onclick="setGenreFilter('Fantasy')">Fantasy</button>
+      <button class="stream-btn" data-genre="Horror" onclick="setGenreFilter('Horror')">Horror</button>
+      <button class="stream-btn" data-genre="Mystery" onclick="setGenreFilter('Mystery')">Mystery</button>
+      <button class="stream-btn" data-genre="Romance" onclick="setGenreFilter('Romance')">Romance</button>
+      <button class="stream-btn" data-genre="Sci-Fi" onclick="setGenreFilter('Sci-Fi')">Sci-Fi</button>
+      <button class="stream-btn" data-genre="Thriller" onclick="setGenreFilter('Thriller')">Thriller</button>
+      <button class="stream-btn" data-genre="Western" onclick="setGenreFilter('Western')">Western</button>
+    </div>
+
     <div class="grid" id="movieGrid"></div>
   </div>
 
@@ -1062,6 +1081,23 @@
           <option value="watchlist">From Watchlist</option>
           <option value="all">Any Status</option>
           <option value="watching">Currently Watching</option>
+        </select>
+        <select class="recommend-select" id="recGenre">
+          <option value="all">Any Genre</option>
+          <option value="Action">Action</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Animation">Animation</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Crime">Crime</option>
+          <option value="Documentary">Documentary</option>
+          <option value="Drama">Drama</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Horror">Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Romance">Romance</option>
+          <option value="Sci-Fi">Sci-Fi</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Western">Western</option>
         </select>
       </div>
       <button class="spin-btn" onclick="getRecommendation()">🎲 Pick Something!</button>
@@ -1171,6 +1207,7 @@ let tmdbKey = localStorage.getItem(TMDB_KEY_STORAGE) || '';
 let currentFilter = 'all';
 let currentTypeFilter = 'all';
 let currentServiceFilter = 'all';
+let currentGenreFilter = 'all';
 let addRating = 0;
 let searchDebounce = null;
 let selectedServices = [];
@@ -1219,8 +1256,16 @@ function setTypeFilter(t) {
 
 function setServiceFilter(s) {
   currentServiceFilter = s;
-  document.querySelectorAll('.stream-btn').forEach(b => {
+  document.querySelectorAll('.stream-btn[data-service]').forEach(b => {
     b.className = 'stream-btn' + (b.dataset.service === s ? ' s-active' : '');
+  });
+  renderLibrary();
+}
+
+function setGenreFilter(g) {
+  currentGenreFilter = g;
+  document.querySelectorAll('.stream-btn[data-genre]').forEach(b => {
+    b.className = 'stream-btn' + (b.dataset.genre === g ? ' s-active' : '');
   });
   renderLibrary();
 }
@@ -1231,8 +1276,9 @@ function renderLibrary() {
     const mf = currentFilter === 'all' || item.status === currentFilter;
     const mt = currentTypeFilter === 'all' || item.type === currentTypeFilter;
     const ms = currentServiceFilter === 'all' || (item.services && item.services.includes(currentServiceFilter));
+    const mg = currentGenreFilter === 'all' || (item.genres && item.genres.includes(currentGenreFilter));
     const mq = !q || item.title.toLowerCase().includes(q);
-    return mf && mt && ms && mq;
+    return mf && mt && ms && mg && mq;
   });
 
   document.getElementById('stat-total').textContent = items.length;
@@ -1389,10 +1435,11 @@ async function fillFromResult(data) {
   document.getElementById('newSummary').value = data.summary || '';
   document.getElementById('newType').value = data.type;
   document.getElementById('apiSearch').value = data.title;
-  document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB — looking up streaming services…</div>`;
+  document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB — looking up genres & streaming…</div>`;
 
-  // Reset services first
+  // Reset services
   selectedServices = [];
+  window._pendingGenres = [];
   SERVICES.forEach(s => {
     const el = document.getElementById('sc_' + s.replace(/[^a-z]/gi,'_'));
     if (el) el.className = 'service-check';
@@ -1401,40 +1448,33 @@ async function fillFromResult(data) {
   if (data.tmdbId && tmdbKey) {
     try {
       const endpoint = data.mediaType === 'tv' ? 'tv' : 'movie';
-      const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${data.tmdbId}/watch/providers?api_key=${tmdbKey}`);
-      const providerData = await res.json();
 
-      // Try US first, then grab first available country
+      // Fetch providers and full details (for genres) in parallel
+      const [providerRes, detailRes] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/${endpoint}/${data.tmdbId}/watch/providers?api_key=${tmdbKey}`),
+        fetch(`https://api.themoviedb.org/3/${endpoint}/${data.tmdbId}?api_key=${tmdbKey}`)
+      ]);
+      const providerData = await providerRes.json();
+      const detailData = await detailRes.json();
+
+      // Extract genres
+      const GENRE_REMAP = { 'Science Fiction': 'Sci-Fi', 'TV Movie': 'Drama' };
+      const rawGenres = (detailData.genres || []).map(g => GENRE_REMAP[g.name] || g.name);
+      window._pendingGenres = rawGenres;
+
+      // Extract providers
       const regions = providerData.results || {};
       const countryData = regions['US'] || Object.values(regions)[0];
-
       if (countryData) {
-        // Combine flatrate (subscription), free, and ads providers
-        const allProviders = [
-          ...(countryData.flatrate || []),
-          ...(countryData.free || []),
-          ...(countryData.ads || [])
-        ];
-
-        // Map TMDB provider names to our service list
+        const allProviders = [...(countryData.flatrate||[]),...(countryData.free||[]),...(countryData.ads||[])];
         const providerMap = {
-          'Netflix': 'Netflix',
-          'Disney Plus': 'Disney+',
-          'Disney+': 'Disney+',
-          'Hulu': 'Hulu',
-          'HBO Max': 'HBO Max',
-          'Max': 'HBO Max',
-          'Amazon Prime Video': 'Prime Video',
-          'Amazon Video': 'Prime Video',
-          'Prime Video': 'Prime Video',
-          'Apple TV Plus': 'Apple TV+',
-          'Apple TV+': 'Apple TV+',
-          'Peacock': 'Peacock',
-          'Peacock Premium': 'Peacock',
-          'Paramount Plus': 'Paramount+',
-          'Paramount+': 'Paramount+'
+          'Netflix':'Netflix','Disney Plus':'Disney+','Disney+':'Disney+','Hulu':'Hulu',
+          'HBO Max':'HBO Max','Max':'HBO Max','Amazon Prime Video':'Prime Video',
+          'Amazon Video':'Prime Video','Prime Video':'Prime Video',
+          'Apple TV Plus':'Apple TV+','Apple TV+':'Apple TV+',
+          'Peacock':'Peacock','Peacock Premium':'Peacock',
+          'Paramount Plus':'Paramount+','Paramount+':'Paramount+'
         };
-
         allProviders.forEach(p => {
           const mapped = providerMap[p.provider_name];
           if (mapped && !selectedServices.includes(mapped)) {
@@ -1443,14 +1483,13 @@ async function fillFromResult(data) {
             if (el) el.className = 'service-check checked';
           }
         });
-
-        const found = selectedServices.length;
-        document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB${found ? ' · ' + found + ' streaming service' + (found>1?'s':'')+' found!' : ' · No streaming info found — add manually'}</div>`;
-      } else {
-        document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB · No streaming info found — add manually</div>`;
       }
+
+      const foundServices = selectedServices.length;
+      const foundGenres = rawGenres.length;
+      document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB${foundGenres?' · '+rawGenres.join(', '):''}${foundServices?' · '+foundServices+' service'+(foundServices>1?'s':'')+' found':' · No streaming info found'}</div>`;
     } catch(e) {
-      document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB · Could not fetch streaming info</div>`;
+      document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB · Could not fetch extra info</div>`;
     }
   }
 }
@@ -1469,6 +1508,7 @@ function saveItem() {
       item.summary = document.getElementById('newSummary').value.trim();
       item.status = document.getElementById('newStatus').value;
       item.services = [...selectedServices];
+      item.genres = window._pendingGenres && window._pendingGenres.length ? [...window._pendingGenres] : (item.genres || []);
       item.rating = addRating;
     }
   } else {
@@ -1481,6 +1521,7 @@ function saveItem() {
       summary: document.getElementById('newSummary').value.trim(),
       status: document.getElementById('newStatus').value,
       services: [...selectedServices],
+      genres: window._pendingGenres ? [...window._pendingGenres] : [],
       rating: addRating,
       review: '',
       added: new Date().toISOString()
@@ -1628,13 +1669,15 @@ function getRecommendation() {
   const typeFilter = document.getElementById('recType').value;
   const serviceFilter = document.getElementById('recService').value;
   const statusFilter = document.getElementById('recStatus').value;
+  const genreFilter = document.getElementById('recGenre').value;
   const result = document.getElementById('recommendResult');
 
   let pool = items.filter(item => {
     const mt = typeFilter === 'all' || item.type === typeFilter;
     const ms = serviceFilter === 'all' || (item.services && item.services.includes(serviceFilter));
     const mst = statusFilter === 'all' || item.status === statusFilter;
-    return mt && ms && mst;
+    const mg = genreFilter === 'all' || (item.genres && item.genres.includes(genreFilter));
+    return mt && ms && mst && mg;
   });
 
   if (!pool.length) {
