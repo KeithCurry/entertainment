@@ -1077,7 +1077,8 @@ function renderLibrary() {
   `).join('');
 }
 
-function toggleService(s) {
+function toggleService(s, event) {
+  if (event) event.preventDefault();
   const idx = selectedServices.indexOf(s);
   if (idx > -1) selectedServices.splice(idx,1);
   else selectedServices.push(s);
@@ -1093,7 +1094,7 @@ function openAddModal(editId) {
   // Build service checkboxes via JS
   const sc = document.getElementById('serviceChecks');
   sc.innerHTML = SERVICES.map(s =>
-    `<label class="service-check" id="sc_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleService('${s}')"><input type="checkbox" value="${s}">${s}</label>`
+    `<label class="service-check" id="sc_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleService('${s}',event)"><input type="checkbox" value="${s}">${s}</label>`
   ).join('');
 
   if (editId) {
@@ -1246,7 +1247,7 @@ function openDetail(id) {
   document.getElementById('detailModalTitle').textContent = item.title;
   const servicesHTML = SERVICES.map(s => {
     const checked = item.services && item.services.includes(s);
-    return `<label class="service-check ${checked?'checked':''}" id="ds_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleDetailService('${id}','${s}')"><input type="checkbox" ${checked?'checked':''}>${s}</label>`;
+    return `<label class="service-check ${checked?'checked':''}" id="ds_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleDetailService('${id}','${s}',event)"><input type="checkbox" ${checked?'checked':''}>${s}</label>`;
   }).join('');
 
   document.getElementById('detailModalBody').innerHTML = `
@@ -1285,8 +1286,8 @@ function openDetail(id) {
   document.getElementById('detailOverlay').classList.add('open');
 }
 
-let detailServiceCache = {};
-function toggleDetailService(id, s) {
+function toggleDetailService(id, s, event) {
+  if (event) event.preventDefault();
   const item = items.find(i=>i.id===id);
   if (!item) return;
   if (!item.services) item.services=[];
