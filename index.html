@@ -944,16 +944,16 @@
       </div>
       <div class="form-group" style="margin-bottom:1rem">
         <label>Streaming Services</label>
-        <div class="service-checkboxes" id="serviceChecks">
-          ${['Netflix','Disney+','Hulu','HBO Max','Prime Video','Apple TV+','Peacock','Paramount+','Other'].map(s =>
-            `<label class="service-check" id="sc_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleService('${s}')"><input type="checkbox" value="${s}">${s}</label>`
-          ).join('')}
-        </div>
+        <div class="service-checkboxes" id="serviceChecks"></div>
       </div>
       <div class="form-group" style="margin-bottom:0.5rem">
         <label>Your Rating</label>
         <div class="star-rating-input" id="addStarRating">
-          ${[1,2,3,4,5].map(i => `<button class="star-input" data-val="${i}" onclick="setAddRating(${i})">★</button>`).join('')}
+          <button class="star-input" data-val="1" onclick="setAddRating(1)">★</button>
+          <button class="star-input" data-val="2" onclick="setAddRating(2)">★</button>
+          <button class="star-input" data-val="3" onclick="setAddRating(3)">★</button>
+          <button class="star-input" data-val="4" onclick="setAddRating(4)">★</button>
+          <button class="star-input" data-val="5" onclick="setAddRating(5)">★</button>
           <span class="star-label" id="addRatingLabel">No rating</span>
         </div>
       </div>
@@ -1085,10 +1085,42 @@ function toggleService(s) {
   if (el) el.className = 'service-check' + (selectedServices.includes(s) ? ' checked' : '');
 }
 
-function openAddModal() {
+function openAddModal(editId) {
   document.getElementById('addOverlay').classList.add('open');
   selectedServices = [];
   resetAddForm();
+
+  // Build service checkboxes via JS
+  const sc = document.getElementById('serviceChecks');
+  sc.innerHTML = SERVICES.map(s =>
+    `<label class="service-check" id="sc_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleService('${s}')"><input type="checkbox" value="${s}">${s}</label>`
+  ).join('');
+
+  if (editId) {
+    const item = items.find(i => i.id === editId);
+    if (item) {
+      document.getElementById('newTitle').value = item.title || '';
+      document.getElementById('newYear').value = item.year || '';
+      document.getElementById('newPoster').value = item.poster || '';
+      document.getElementById('newSummary').value = item.summary || '';
+      document.getElementById('newStatus').value = item.status || 'watchlist';
+      document.getElementById('newType').value = item.type || 'movie';
+      selectedServices = [...(item.services || [])];
+      selectedServices.forEach(s => {
+        const el = document.getElementById('sc_' + s.replace(/[^a-z]/gi,'_'));
+        if (el) el.className = 'service-check checked';
+      });
+      setAddRating(item.rating || 0);
+      document.getElementById('addOverlay').dataset.editId = editId;
+      document.querySelector('#addOverlay .modal-header h2').textContent = 'Edit Movie / Show';
+      document.querySelector('#addOverlay .btn-primary').textContent = 'Save Changes';
+    }
+  } else {
+    delete document.getElementById('addOverlay').dataset.editId;
+    document.querySelector('#addOverlay .modal-header h2').textContent = 'Add Movie or Show';
+    document.querySelector('#addOverlay .btn-primary').textContent = 'Add to Library';
+  }
+
   if (tmdbKey) document.getElementById('apiNote').innerHTML = '<span style="color:var(--watching)">✓ TMDB key active. Search is enabled!</span>';
   else document.getElementById('tmdbKeyInput') && (document.getElementById('tmdbKeyInput').value = '');
 }
@@ -1174,20 +1206,35 @@ function fillFromResult(data) {
 function saveItem() {
   const title = document.getElementById('newTitle').value.trim();
   if (!title) { alert('Please enter a title.'); return; }
-  const item = {
-    id: Date.now().toString(),
-    title,
-    type: document.getElementById('newType').value,
-    year: document.getElementById('newYear').value.trim(),
-    poster: document.getElementById('newPoster').value.trim(),
-    summary: document.getElementById('newSummary').value.trim(),
-    status: document.getElementById('newStatus').value,
-    services: [...selectedServices],
-    rating: addRating,
-    review: '',
-    added: new Date().toISOString()
-  };
-  items.unshift(item);
+  const editId = document.getElementById('addOverlay').dataset.editId;
+  if (editId) {
+    const item = items.find(i => i.id === editId);
+    if (item) {
+      item.title = title;
+      item.type = document.getElementById('newType').value;
+      item.year = document.getElementById('newYear').value.trim();
+      item.poster = document.getElementById('newPoster').value.trim();
+      item.summary = document.getElementById('newSummary').value.trim();
+      item.status = document.getElementById('newStatus').value;
+      item.services = [...selectedServices];
+      item.rating = addRating;
+    }
+  } else {
+    const item = {
+      id: Date.now().toString(),
+      title,
+      type: document.getElementById('newType').value,
+      year: document.getElementById('newYear').value.trim(),
+      poster: document.getElementById('newPoster').value.trim(),
+      summary: document.getElementById('newSummary').value.trim(),
+      status: document.getElementById('newStatus').value,
+      services: [...selectedServices],
+      rating: addRating,
+      review: '',
+      added: new Date().toISOString()
+    };
+    items.unshift(item);
+  }
   save();
   closeAddModal();
   renderLibrary();
@@ -1229,7 +1276,10 @@ function openDetail(id) {
     <textarea class="detail-review-area" id="dreview_${id}" placeholder="Your thoughts…">${item.review||''}</textarea>
     <div class="detail-actions">
       <button class="btn-danger" onclick="deleteItem('${id}')">Remove</button>
-      <button class="btn-primary" onclick="saveDetailReview('${id}')">Save</button>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn-secondary" onclick="closeDetailModal();openAddModal('${id}')">Edit</button>
+        <button class="btn-primary" onclick="saveDetailReview('${id}')">Save</button>
+      </div>
     </div>
   `;
   document.getElementById('detailOverlay').classList.add('open');
