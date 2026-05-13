@@ -25,7 +25,7 @@
     --gold-dim: #6a5010;
     --watchlist: #4a7fa8;
     --watching: #5ab870;
-    --finished: #e85d26;
+    --watched: #e85d26;
     --gaveup: #804060;
     --radius: 10px;
     --shadow: 0 8px 30px rgba(0,0,0,0.6);
@@ -783,6 +783,158 @@
 
   .api-note a { color: var(--cyan); }
 
+  /* RECOMMEND VIEW */
+  .recommend-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 2rem 0;
+  }
+
+  .recommend-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 0.08em;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+  }
+
+  .recommend-sub {
+    font-size: 0.85rem;
+    color: var(--text-faint);
+    margin-bottom: 2rem;
+    letter-spacing: 0.04em;
+  }
+
+  .recommend-filters {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .recommend-select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius);
+    outline: none;
+    cursor: pointer;
+    min-width: 160px;
+    transition: border-color 0.2s;
+  }
+
+  .recommend-select:focus { border-color: var(--accent); }
+  .recommend-select option { background: var(--bg2); }
+
+  .spin-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    padding: 0.85rem 2.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: block;
+    margin: 0 auto 2rem;
+  }
+
+  .spin-btn:hover { background: var(--accent2); transform: scale(1.03); }
+  .spin-btn:active { transform: scale(0.97); }
+
+  .recommend-result {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: none;
+    text-align: left;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .recommend-result.show { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rec-poster-row {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .rec-poster {
+    width: 120px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .rec-poster img { width: 100%; display: block; }
+
+  .rec-poster-placeholder {
+    width: 120px;
+    height: 180px;
+    background: var(--bg2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--text-faint);
+  }
+
+  .rec-info { flex: 1; }
+
+  .rec-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+
+  .rec-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 0.3rem;
+  }
+
+  .rec-year { font-size: 0.82rem; color: var(--text-faint); margin-bottom: 0.75rem; }
+
+  .rec-services { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+
+  .rec-summary {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+
+  .rec-stars { display: flex; gap: 3px; margin-bottom: 0.5rem; }
+  .rec-star { font-size: 1rem; color: var(--gold-dim); }
+  .rec-star.filled { color: var(--gold); }
+
+  .rec-no-results {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.9rem;
+  }
+
   @media (max-width: 600px) {
     main { padding: 1rem; }
     .form-row { flex-direction: column; }
@@ -803,6 +955,7 @@
     <nav>
       <button class="active" onclick="showView('library')">Library</button>
       <button onclick="showView('stats')">Stats</button>
+      <button onclick="showView('recommend')">Recommend</button>
     </nav>
   </div>
 </header>
@@ -833,7 +986,7 @@
       <div class="stat-divider"></div>
       <div class="stat-pill">
         <div class="stat-num" id="stat-finished">0</div>
-        <div class="stat-label">Finished</div>
+        <div class="stat-label">Watched</div>
       </div>
     </div>
 
@@ -846,7 +999,7 @@
         <button class="filter-btn f-active" data-filter="all" onclick="setFilter('all')">All</button>
         <button class="filter-btn" data-filter="watchlist" onclick="setFilter('watchlist')">Watchlist</button>
         <button class="filter-btn" data-filter="watching" onclick="setFilter('watching')">Watching</button>
-        <button class="filter-btn" data-filter="finished" onclick="setFilter('finished')">Finished</button>
+        <button class="filter-btn" data-filter="finished" onclick="setFilter('finished')">Watched</button>
         <button class="filter-btn" data-filter="gaveup" onclick="setFilter('gaveup')">Gave Up</button>
       </div>
       <div class="filter-group">
@@ -880,6 +1033,40 @@
   <div id="view-stats" style="display:none">
     <h2 style="font-family:'Bebas Neue',sans-serif; color:var(--accent2); margin-bottom:1.5rem; font-size:2rem; letter-spacing:0.06em;">Watch Stats</h2>
     <div id="stats-content"></div>
+  </div>
+
+  <!-- RECOMMEND VIEW -->
+  <div id="view-recommend" style="display:none">
+    <div class="recommend-wrap">
+      <div class="recommend-title">What Should We Watch?</div>
+      <div class="recommend-sub">Pick your filters and let fate decide</div>
+      <div class="recommend-filters">
+        <select class="recommend-select" id="recType">
+          <option value="all">Movies &amp; Shows</option>
+          <option value="movie">Movies Only</option>
+          <option value="show">TV Shows Only</option>
+        </select>
+        <select class="recommend-select" id="recService">
+          <option value="all">Any Service</option>
+          <option value="Netflix">Netflix</option>
+          <option value="Disney+">Disney+</option>
+          <option value="Hulu">Hulu</option>
+          <option value="HBO Max">HBO Max</option>
+          <option value="Prime Video">Prime Video</option>
+          <option value="Apple TV+">Apple TV+</option>
+          <option value="Peacock">Peacock</option>
+          <option value="Paramount+">Paramount+</option>
+          <option value="Other">Other</option>
+        </select>
+        <select class="recommend-select" id="recStatus">
+          <option value="watchlist">From Watchlist</option>
+          <option value="all">Any Status</option>
+          <option value="watching">Currently Watching</option>
+        </select>
+      </div>
+      <button class="spin-btn" onclick="getRecommendation()">🎲 Pick Something!</button>
+      <div class="recommend-result" id="recommendResult"></div>
+    </div>
   </div>
 </main>
 
@@ -929,7 +1116,7 @@
           <select id="newStatus">
             <option value="watchlist">Watchlist</option>
             <option value="watching">Watching</option>
-            <option value="finished">Finished</option>
+            <option value="finished">Watched</option>
             <option value="gaveup">Gave Up</option>
           </select>
         </div>
@@ -1005,8 +1192,9 @@ function saveTmdbKey() {
 function showView(v) {
   document.getElementById('view-library').style.display = v === 'library' ? '' : 'none';
   document.getElementById('view-stats').style.display = v === 'stats' ? '' : 'none';
+  document.getElementById('view-recommend').style.display = v === 'recommend' ? '' : 'none';
   document.querySelectorAll('nav button').forEach((b,i) => {
-    b.classList.toggle('active', (i===0&&v==='library')||(i===1&&v==='stats'));
+    b.classList.toggle('active', (i===0&&v==='library')||(i===1&&v==='stats')||(i===2&&v==='recommend'));
   });
   if (v === 'stats') renderStats();
 }
@@ -1065,7 +1253,7 @@ function renderLibrary() {
         ? `<img class="movie-poster" src="${item.poster}" alt="${item.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : ''}
       <div class="movie-poster-placeholder" style="${item.poster?'display:none':''}">🎬</div>
-      <span class="status-badge badge-${item.status}">${{watchlist:'Watchlist',watching:'Watching',finished:'Finished',gaveup:'Gave Up'}[item.status]||item.status}</span>
+      <span class="status-badge badge-${item.status}">${{watchlist:'Watchlist',watching:'Watching',finished:'Watched',gaveup:'Gave Up'}[item.status]||item.status}</span>
       <span class="type-overlay">${item.type==='show'?'TV':'Movie'}</span>
       <div class="movie-info">
         <div class="movie-title">${item.title}</div>
@@ -1180,7 +1368,7 @@ async function searchTMDB() {
       const thumb = r.poster_path ? 'https://image.tmdb.org/t/p/w92' + r.poster_path : '';
       const summary = r.overview || '';
       const type = isTV ? 'show' : 'movie';
-      const obj = JSON.stringify({title, year, poster, summary, type}).replace(/"/g,'&quot;');
+      const obj = JSON.stringify({title, year, poster, summary, type, tmdbId: r.id, mediaType: r.media_type}).replace(/"/g,'&quot;');
       return `<div class="search-result-item" onclick="fillFromResult(${obj})">
         ${thumb ? `<img class="result-thumb" src="${thumb}" onerror="this.src=''">` : `<div class="result-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem">🎬</div>`}
         <div class="result-info">
@@ -1194,14 +1382,77 @@ async function searchTMDB() {
   }
 }
 
-function fillFromResult(data) {
+async function fillFromResult(data) {
   document.getElementById('newTitle').value = data.title;
   document.getElementById('newYear').value = data.year || '';
   document.getElementById('newPoster').value = data.poster || '';
   document.getElementById('newSummary').value = data.summary || '';
   document.getElementById('newType').value = data.type;
-  document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB</div>`;
   document.getElementById('apiSearch').value = data.title;
+  document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB — looking up streaming services…</div>`;
+
+  // Reset services first
+  selectedServices = [];
+  SERVICES.forEach(s => {
+    const el = document.getElementById('sc_' + s.replace(/[^a-z]/gi,'_'));
+    if (el) el.className = 'service-check';
+  });
+
+  if (data.tmdbId && tmdbKey) {
+    try {
+      const endpoint = data.mediaType === 'tv' ? 'tv' : 'movie';
+      const res = await fetch(`https://api.themoviedb.org/3/${endpoint}/${data.tmdbId}/watch/providers?api_key=${tmdbKey}`);
+      const providerData = await res.json();
+
+      // Try US first, then grab first available country
+      const regions = providerData.results || {};
+      const countryData = regions['US'] || Object.values(regions)[0];
+
+      if (countryData) {
+        // Combine flatrate (subscription), free, and ads providers
+        const allProviders = [
+          ...(countryData.flatrate || []),
+          ...(countryData.free || []),
+          ...(countryData.ads || [])
+        ];
+
+        // Map TMDB provider names to our service list
+        const providerMap = {
+          'Netflix': 'Netflix',
+          'Disney Plus': 'Disney+',
+          'Disney+': 'Disney+',
+          'Hulu': 'Hulu',
+          'HBO Max': 'HBO Max',
+          'Max': 'HBO Max',
+          'Amazon Prime Video': 'Prime Video',
+          'Amazon Video': 'Prime Video',
+          'Prime Video': 'Prime Video',
+          'Apple TV Plus': 'Apple TV+',
+          'Apple TV+': 'Apple TV+',
+          'Peacock': 'Peacock',
+          'Peacock Premium': 'Peacock',
+          'Paramount Plus': 'Paramount+',
+          'Paramount+': 'Paramount+'
+        };
+
+        allProviders.forEach(p => {
+          const mapped = providerMap[p.provider_name];
+          if (mapped && !selectedServices.includes(mapped)) {
+            selectedServices.push(mapped);
+            const el = document.getElementById('sc_' + mapped.replace(/[^a-z]/gi,'_'));
+            if (el) el.className = 'service-check checked';
+          }
+        });
+
+        const found = selectedServices.length;
+        document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB${found ? ' · ' + found + ' streaming service' + (found>1?'s':'')+' found!' : ' · No streaming info found — add manually'}</div>`;
+      } else {
+        document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB · No streaming info found — add manually</div>`;
+      }
+    } catch(e) {
+      document.getElementById('apiResults').innerHTML = `<div style="padding:0.4rem 0;color:var(--watching);font-size:0.82rem">✓ Filled from TMDB · Could not fetch streaming info</div>`;
+    }
+  }
 }
 
 function saveItem() {
@@ -1261,7 +1512,7 @@ function openDetail(id) {
         <div class="detail-year">${item.year||''} · ${item.type==='show'?'TV Show':'Movie'}</div>
         <div style="margin-bottom:0.6rem">
           <select style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:0.82rem;padding:0.3rem 0.6rem;border-radius:6px;outline:none" onchange="updateItemField('${id}','status',this.value)">
-            ${['watchlist','watching','finished','gaveup'].map(s=>`<option value="${s}" ${item.status===s?'selected':''}>${{watchlist:'Watchlist',watching:'Watching',finished:'Finished',gaveup:'Gave Up'}[s]}</option>`).join('')}
+            ${['watchlist','watching','finished','gaveup'].map(s=>`<option value="${s}" ${item.status===s?'selected':''}>${{watchlist:'Watchlist',watching:'Watching',finished:'Watched',gaveup:'Gave Up'}[s]}</option>`).join('')}
           </select>
         </div>
         <div class="detail-stars" id="dstars_${id}">
@@ -1343,7 +1594,7 @@ function renderStats() {
 
   document.getElementById('stats-content').innerHTML = `
     <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
-      ${[['Total',total],['Movies',items.filter(i=>i.type==='movie').length],['TV Shows',items.filter(i=>i.type==='show').length],['Finished',finished.length],['Avg Rating',total&&finished.filter(i=>i.rating).length?avg.toFixed(1):'—']].map(([l,v])=>
+      ${[['Total',total],['Movies',items.filter(i=>i.type==='movie').length],['TV Shows',items.filter(i=>i.type==='show').length],['Watched',finished.length],['Avg Rating',total&&finished.filter(i=>i.rating).length?avg.toFixed(1):'—']].map(([l,v])=>
         `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.5rem;flex:1;min-width:100px;text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.05em;color:var(--accent2)">${v}</div><div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-top:0.2rem">${l}</div></div>`
       ).join('')}
     </div>
@@ -1352,7 +1603,7 @@ function renderStats() {
         <div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:1rem">By Status</div>
         ${Object.entries(byStatus).map(([s,n])=>`
           <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;font-size:0.85rem">
-            <span style="color:var(--text-muted)">${{watchlist:'Watchlist',watching:'Watching',finished:'Finished',gaveup:'Gave Up'}[s]}</span>
+            <span style="color:var(--text-muted)">${{watchlist:'Watchlist',watching:'Watching',finished:'Watched',gaveup:'Gave Up'}[s]}</span>
             <span style="color:var(--accent2);font-weight:700">${n}</span>
           </div>
           <div style="background:var(--border);height:3px;border-radius:2px;margin-bottom:0.75rem">
@@ -1368,6 +1619,44 @@ function renderStats() {
             <span style="color:var(--text-muted);font-weight:700">${n}</span>
           </div>
         `).join('') : '<div style="color:var(--text-faint);font-size:0.85rem">No streaming data yet.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function getRecommendation() {
+  const typeFilter = document.getElementById('recType').value;
+  const serviceFilter = document.getElementById('recService').value;
+  const statusFilter = document.getElementById('recStatus').value;
+  const result = document.getElementById('recommendResult');
+
+  let pool = items.filter(item => {
+    const mt = typeFilter === 'all' || item.type === typeFilter;
+    const ms = serviceFilter === 'all' || (item.services && item.services.includes(serviceFilter));
+    const mst = statusFilter === 'all' || item.status === statusFilter;
+    return mt && ms && mst;
+  });
+
+  if (!pool.length) {
+    result.className = 'recommend-result show';
+    result.innerHTML = `<div class="rec-no-results">😕 No matches found! Try different filters or add more to your library.</div>`;
+    return;
+  }
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  result.className = 'recommend-result show';
+  result.innerHTML = `
+    <div class="rec-poster-row">
+      ${pick.poster
+        ? `<div class="rec-poster"><img src="${pick.poster}" alt="${pick.title}"></div>`
+        : `<div class="rec-poster-placeholder">🎬</div>`}
+      <div class="rec-info">
+        <div class="rec-label">Tonight's Pick</div>
+        <div class="rec-title">${pick.title}</div>
+        <div class="rec-year">${pick.year ? pick.year + ' · ' : ''}${pick.type === 'show' ? 'TV Show' : 'Movie'}</div>
+        ${pick.rating ? `<div class="rec-stars">${[1,2,3,4,5].map(i=>`<span class="rec-star ${pick.rating>=i?'filled':''}">★</span>`).join('')}</div>` : ''}
+        ${pick.services && pick.services.length ? `<div class="rec-services">${pick.services.map(s=>`<span class="stream-tag">${s}</span>`).join('')}</div>` : ''}
+        ${pick.summary ? `<div class="rec-summary">${pick.summary}</div>` : ''}
       </div>
     </div>
   `;
