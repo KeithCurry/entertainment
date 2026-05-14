@@ -701,7 +701,7 @@ async function saveItem(){
     summary:document.getElementById('newSummary').value.trim(),
     status:document.getElementById('newStatus').value,
     services:[...selectedServices],
-    genres:window._pendingGenres&&window._pendingGenres.length?[...window._pendingGenres]:(editId?items.find(i=>i.id===editId)?.genres||[]),
+    genres:window._pendingGenres&&window._pendingGenres.length?[...window._pendingGenres]:(editId?(items.find(i=>i.id===editId)||{genres:[]}).genres:[]),
     rating:addRating,
     year_completed:document.getElementById('newYearCompleted').value.trim()
   };
