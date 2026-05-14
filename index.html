@@ -575,7 +575,7 @@ function openAddModal(editId){
   sc.innerHTML=SERVICES.map(s=>`<label class="service-check" id="sc_${s.replace(/[^a-z]/gi,'_')}" onclick="toggleService('${s}',event)"><input type="checkbox" value="${s}">${s}</label>`).join('');
 
   if(editId){
-    const item=items.find(i=>i.id===editId);
+    const item=items.find(i=>i.id==editId);
     if(item){
       document.getElementById('newTitle').value=item.title||'';
       document.getElementById('newYear').value=item.year||'';
@@ -701,12 +701,12 @@ async function saveItem(){
     summary:document.getElementById('newSummary').value.trim(),
     status:document.getElementById('newStatus').value,
     services:[...selectedServices],
-    genres:window._pendingGenres&&window._pendingGenres.length?[...window._pendingGenres]:(editId?(items.find(i=>i.id===editId)||{genres:[]}).genres:[]),
+    genres:window._pendingGenres&&window._pendingGenres.length?[...window._pendingGenres]:(editId?(items.find(i=>i.id==editId)||{genres:[]}).genres:[]),
     rating:addRating,
     year_completed:document.getElementById('newYearCompleted').value.trim()
   };
   if(editId){
-    const item=items.find(i=>i.id===editId);
+    const item=items.find(i=>i.id==editId);
     if(item) Object.assign(item,fields);
     try{await dbUpdate(editId,fields);}catch(e){console.error(e);}
   } else {
@@ -718,7 +718,7 @@ async function saveItem(){
 }
 
 function openDetail(id){
-  const item=items.find(i=>i.id===id);
+  const item=items.find(i=>i.id==id);
   if(!item) return;
   document.getElementById('detailModalTitle').textContent=item.title;
   const servicesHTML=SERVICES.map(s=>{
@@ -761,7 +761,7 @@ function openDetail(id){
 }
 
 async function updateItemStatus(id,val){
-  const item=items.find(i=>i.id===id);
+  const item=items.find(i=>i.id==id);
   if(!item) return;
   item.status=val;
   const fields={status:val};
@@ -781,7 +781,7 @@ function closeDetailModal(e){
 
 async function toggleDetailService(id,s,event){
   if(event) event.preventDefault();
-  const item=items.find(i=>i.id===id);
+  const item=items.find(i=>i.id==id);
   if(!item) return;
   if(!item.services) item.services=[];
   const idx=item.services.indexOf(s);
@@ -792,7 +792,7 @@ async function toggleDetailService(id,s,event){
 }
 
 async function updateItemRating(id,val){
-  const item=items.find(i=>i.id===id);
+  const item=items.find(i=>i.id==id);
   if(!item) return;
   item.rating=val;
   document.querySelectorAll(`#dstars_${id} .detail-star`).forEach((s,i)=>s.classList.toggle('filled',i<val));
@@ -802,13 +802,13 @@ async function updateItemRating(id,val){
 
 async function saveDetailReview(id){
   const area=document.getElementById(`dreview_${id}`);
-  if(area){const item=items.find(i=>i.id===id);if(item)item.review=area.value;try{await dbUpdate(id,{review:area.value});}catch(e){console.error(e);}}
+  if(area){const item=items.find(i=>i.id==id);if(item)item.review=area.value;try{await dbUpdate(id,{review:area.value});}catch(e){console.error(e);}}
   closeDetailModal();
 }
 
 async function deleteItem(id){
   if(!confirm('Remove from library?')) return;
-  items=items.filter(i=>i.id!==id);
+  items=items.filter(i=>i.id!=id);
   try{await dbDelete(id);}catch(e){console.error(e);}
   closeDetailModal();
 }
